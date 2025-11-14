@@ -1,0 +1,96 @@
+@hostname = localhost
+@port = 5000
+@host = {{hostname}}:{{port}}
+@contentType = application/json
+@auth = {{host}}/api/auth
+@recipe= {{host}}/api/recipes
+
+@token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTJlMDdiZmNkZWExMWIzZTY5Njg4ZiIsImlhdCI6MTc2Mjg0NTU2MSwiZXhwIjoxNzYzNDUwMzYxfQ.6Kv245cczaFBFb5dSmIwxkT9a21Sn1bACG2Xk9xOSzo
+###
+GET http://{{host}}
+
+###
+POST http://{{auth}}/register
+content-type: {{contentType}}
+
+{
+    "username":"user",
+    "email":"user@email.com",
+    "password":"password"
+}
+
+###
+POST http://{{auth}}/login
+Content-Type: {{contentType}}
+
+{
+    "email":"user@email.com",
+    "password":"password"
+}
+
+###
+GET http://{{auth}}/me
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+###
+POST http://{{recipe}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "title": "Test Pancakes",
+  "description": "Fluffy homemade pancakes",
+  "ingredients": [
+    {
+      "name": "Flour",
+      "quantity": 200,
+      "unit": "g"
+    },
+    {
+      "name": "Milk",
+      "quantity": 250,
+      "unit": "ml"
+    }
+  ],
+  "instructions": [
+    "Mix dry ingredients",
+    "Add wet ingredients and mix",
+    "Cook on medium heat"
+  ],
+  "prepTime": 10,
+  "cookTime": 15,
+  "servings": 4,
+  "difficulty": "Easy",
+  "category": "Breakfast",
+  "tags": ["quick", "breakfast"]
+}
+
+###
+GET http://{{recipe}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+###
+GET http://{{recipe}}/stats
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+###
+GET http://{{recipe}}/69142447bc9729c1839af18f
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+###
+PUT http://{{recipe}}/69142447bc9729c1839af18f
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+    "title":"Tasty Pancakes"
+}
+
+###
+DELETE http://{{recipe}}/691426fabc9729c1839af1b0
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}

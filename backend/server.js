@@ -4,7 +4,7 @@ require('dotenv').config();
 
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
-
+const recipeRoutes = require('./routes/recipes');
 // Connect to database
 connectDB();
 
@@ -17,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/recipes', recipeRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
@@ -24,12 +25,12 @@ app.get('/', (req, res) => {
 });
 
 // Handle undefined routes
-// app.use('/*', (req, res) => {
-//   res.status(404).json({
-//     success: false,
-//     message: 'Route not found'
-//   });
-// });
+app.use(/.*/, (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found'
+  });
+});
 
 const PORT = process.env.PORT || 5000;
 
