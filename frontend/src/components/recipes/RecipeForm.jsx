@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createRecipe, updateRecipe, clearCurrentRecipe } from '../../store/slices/recipeSlice';
 import { useNavigate } from 'react-router-dom';
+import ImageUpload from './ImageUpload';
 
 const RecipeForm = ({ recipe = null }) => {
   const dispatch = useDispatch();
@@ -19,7 +20,8 @@ const RecipeForm = ({ recipe = null }) => {
     difficulty: 'Medium',
     category: 'Other',
     tags: [],
-    isPublic: false
+    isPublic: false,
+    image : ''
   });
 
   const [newTag, setNewTag] = useState('');
@@ -27,6 +29,9 @@ const RecipeForm = ({ recipe = null }) => {
   const units = ['g', 'kg', 'ml', 'l', 'cup', 'tbsp', 'tsp', 'piece', 'pinch', 'to taste'];
   const difficulties = ['Easy', 'Medium', 'Hard'];
   const categories = ['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Beverage', 'Other'];
+  const handleImageUpload = (imageUrl)=>{
+    setFormData(prev => ({...prev,image:imageUrl}));
+  };
 
   useEffect(() => {
     if (recipe) {
@@ -152,7 +157,12 @@ const RecipeForm = ({ recipe = null }) => {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">
         {recipe ? 'Edit Recipe' : 'Create New Recipe'}
       </h1>
-
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <ImageUpload 
+                onImageUpload={handleImageUpload}
+                currentImage={formData.image}
+            />
+        </div>
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
           {error}

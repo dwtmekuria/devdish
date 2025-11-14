@@ -1,10 +1,13 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const path = require('path');
 
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
 const recipeRoutes = require('./routes/recipes');
+const uploadRoutes = require('./routes/upload');
+
 // Connect to database
 connectDB();
 
@@ -14,11 +17,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/recipes', recipeRoutes);
-
+app.use('/api/upload', uploadRoutes);
 // Basic route
 app.get('/', (req, res) => {
   res.json({ message: 'DevDish API is running!' });
