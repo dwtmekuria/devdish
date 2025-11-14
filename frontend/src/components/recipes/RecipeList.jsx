@@ -1,28 +1,66 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState,useEffect } from 'react';
+import {useDispatch, useSelector } from 'react-redux';
 import { fetchRecipes, deleteRecipe, setFilters } from '../../store/slices/recipeSlice';
 import RecipeCard from './RecipeCard';
 import RecipeFilters from './RecipeFilters';
+import AdvancedFilters from './AdvancedFilters';
+import SearchBar from './SearchBar';
 
 const RecipeList = () => {
   const dispatch = useDispatch();
   const { recipes, loading, error, filters, pagination } = useSelector((state) => state.recipes);
+  
+  const [enhancedFilters, setEnhancedFilters] = useState({
+    category: 'All',
+    search: '',
+    difficulty: 'All',
+    maxTime: '',
+    tags: [],
+    sortBy: 'createdAt',
+    sortOrder: 'desc'
+  });
 
   useEffect(() => {
-    dispatch(fetchRecipes(filters));
-  }, [dispatch, filters]);
+    dispatch(fetchRecipes(enhancedFilters));
+  }, [dispatch, enhancedFilters]);
+
 
   const handleDelete = async (recipeId) => {
     if (window.confirm('Are you sure you want to delete this recipe?')) {
       await dispatch(deleteRecipe(recipeId));
-      // Refresh the list after deletion
-      dispatch(fetchRecipes(filters));
+      dispatch(fetchRecipes(enhancedFilters));
     }
   };
 
-  const handleFilterChange = (newFilters) => {
-    dispatch(setFilters(newFilters));
+
+  const handleSearch = (searchTerm, searchType = 'all') => {
+    setEnhancedFilters(prev => ({
+      ...prev,
+      search: searchTerm
+    }));
   };
+
+  const handleFilterChange = (newFilters) => {
+    setEnhancedFilters(prev => ({
+      ...prev,
+      ...newFilters,
+      page: 1 // Reset to first page when filters change
+    }));
+  };
+
+  const handleClearFilters = () => {
+    setEnhancedFilters({
+      category: 'All',
+      search: '',
+      difficulty: 'All',
+      maxTime: '',
+      tags: [],
+      sortBy: 'createdAt',
+      sortOrder: 'desc'
+    });
+  };
+
+
 
   if (loading) {
     return (
@@ -43,25 +81,37 @@ const RecipeList = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Recipes</h1>
           <p className="text-gray-600">
             {pagination.totalRecipes} recipes found
+            {enhancedFilters.search && ` for "${enhancedFilters.search}"`}
           </p>
         </div>
-        <a
-          href="/recipes/new"
-          className="btn-primary"
-        >
-          + Add New Recipe
-        </a>
+        <div className="flex space-x-4">
+          <a
+            href="/recipes/new"
+            className="btn-primary"
+          >
+            + Add New Recipe
+          </a>
+        </div>
       </div>
 
-      {/* Filters */}
-      <RecipeFilters 
-        filters={filters} 
-        onFilterChange={handleFilterChange} 
+      {/* Search Bar */}
+      <div className="flex justify-center">
+        <SearchBar 
+          onSearch={handleSearch}
+          initialValue={enhancedFilters.search}
+        />
+      </div>
+
+      {/* Advanced Filters */}
+      <AdvancedFilters 
+        filters={enhancedFilters}
+        onFilterChange={handleFilterChange}
+        onClearFilters={handleClearFilters}
       />
 
       {/* Recipe Grid */}

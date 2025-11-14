@@ -82,13 +82,19 @@ const recipeSlice = createSlice({
     error: null,
     filters: {
       category: 'All',
-      search: ''
+      search: '',
+      difficulty: 'All',
+      maxTime: '',
+      tags: [],
+      sortBy: 'createdAt',
+      sortOrder: 'desc'
     },
     pagination: {
       currentPage: 1,
       totalPages: 1,
       totalRecipes: 0
-    }
+    },
+    availableTags: []
   },
   reducers: {
     clearCurrentRecipe: (state) => {
@@ -119,6 +125,7 @@ const recipeSlice = createSlice({
           totalPages: action.payload.totalPages,
           totalRecipes: action.payload.total
         };
+        state.availableTags = action.payload.availableTags || [];
       })
       .addCase(fetchRecipes.rejected, (state, action) => {
         state.loading = false;
@@ -155,9 +162,27 @@ const recipeSlice = createSlice({
         if (state.currentRecipe && state.currentRecipe._id === action.payload) {
           state.currentRecipe = null;
         }
+      })
+      // Fetch User Tags
+      .addCase(fetchUserTags.fulfilled, (state, action) => {
+        state.availableTags = action.payload;
       });
   }
 });
+
+export const fetchUserTags = createAsyncThunk(
+  'recipes/fetchUserTags',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await recipeAPI.getUserTags();
+      return response.data.data.tags;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch tags'
+      );
+    }
+  }
+);
 
 export const { clearCurrentRecipe, clearError, setFilters, clearFilters } = recipeSlice.actions;
 export default recipeSlice.reducer;

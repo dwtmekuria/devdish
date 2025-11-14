@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard'
 import Recipes from './pages/Recipes';
 import CreateRecipe from './pages/CreateRecipe';
 import EditRecipe from './pages/EditRecipe';
+import RecipeDetailPage from './pages/RecipeDetailPage';
 
 import './App.css'
 
@@ -102,6 +103,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <EditRecipe />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/recipes/:id" 
+            element={
+              <ProtectedRoute>
+                <RecipeDetailPage />
               </ProtectedRoute>
             } 
           />

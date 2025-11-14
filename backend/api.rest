@@ -94,3 +94,8 @@ Authorization: Bearer {{token}}
 DELETE http://{{recipe}}/691426fabc9729c1839af1b0
 Content-Type: {{contentType}}
 Authorization: Bearer {{token}}
+
+###
+GET http://{{recipe}}/tags
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}

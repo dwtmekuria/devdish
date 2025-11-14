@@ -1,36 +1,80 @@
 const Recipe = require('../models/Recipe');
 
-// Get all recipes for current user
+// Enhanced getRecipes function with advanced filtering
 const getRecipes = async (req, res) => {
   try {
-    const { page = 1, limit = 10, category, search } = req.query;
+    const { 
+      page = 1, 
+      limit = 12, 
+      category, 
+      search, 
+      difficulty,
+      maxTime,
+      tags,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
     
     const filter = { userId: req.user.id };
     
-    // Add category filter if provided
+    // Category filter
     if (category && category !== 'All') {
       filter.category = category;
     }
     
-    // Add search filter if provided
-    if (search) {
-      filter.$text = { $search: search };
+    // Difficulty filter
+    if (difficulty && difficulty !== 'All') {
+      filter.difficulty = difficulty;
     }
     
+    // Max total time filter
+    if (maxTime) {
+      filter.$expr = {
+        $lte: [
+          { $add: ['$prepTime', '$cookTime'] },
+          parseInt(maxTime)
+        ]
+      };
+    }
+    
+    // Tags filter
+    if (tags) {
+      const tagArray = Array.isArray(tags) ? tags : [tags];
+      filter.tags = { $in: tagArray };
+    }
+    
+    // Search across multiple fields
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { 'ingredients.name': { $regex: search, $options: 'i' } },
+        { instructions: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // Sort configuration
+    const sortConfig = {};
+    sortConfig[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    
     const recipes = await Recipe.find(filter)
-      .sort({ createdAt: -1 })
+      .sort(sortConfig)
       .limit(limit * 1)
       .skip((page - 1) * limit);
     
     const total = await Recipe.countDocuments(filter);
+    
+    // Get available tags for filtering
+    const availableTags = await Recipe.distinct('tags', { userId: req.user.id });
     
     res.json({
       success: true,
       data: {
         recipes,
         totalPages: Math.ceil(total / limit),
-        currentPage: page,
-        total
+        currentPage: parseInt(page),
+        total,
+        availableTags
       }
     });
     
@@ -38,6 +82,25 @@ const getRecipes = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching recipes',
+      error: error.message
+    });
+  }
+};
+
+// Get all unique tags for user
+const getUserTags = async (req, res) => {
+  try {
+    const tags = await Recipe.distinct('tags', { userId: req.user.id });
+    
+    res.json({
+      success: true,
+      data: { tags }
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching tags',
       error: error.message
     });
   }
@@ -203,5 +266,6 @@ module.exports = {
   createRecipe,
   updateRecipe,
   deleteRecipe,
-  getRecipeStats
+  getRecipeStats,
+  getUserTags
 };

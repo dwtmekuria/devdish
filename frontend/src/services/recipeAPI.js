@@ -1,8 +1,17 @@
 import api from './api';
 
 export const recipeAPI = {
-  // Get all recipes with optional filters
-  getRecipes: (params = {}) => api.get('/recipes', { params }),
+
+  // Enhanced getRecipes with all filter parameters
+  getRecipes: (params = {}) => {
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([_, value]) => 
+        value !== '' && value !== 'All' && !(Array.isArray(value) && value.length === 0)
+      )
+    );
+    
+    return api.get('/recipes', { params: cleanParams });
+  },
   
   // Get single recipe
   getRecipe: (id) => api.get(`/recipes/${id}`),
@@ -17,7 +26,11 @@ export const recipeAPI = {
   deleteRecipe: (id) => api.delete(`/recipes/${id}`),
   
   // Get recipe statistics
-  getRecipeStats: () => api.get('/recipes/stats')
+  getRecipeStats: () => api.get('/recipes/stats'),
+
+    // Get user tags
+  getUserTags: () => api.get('/recipes/tags/user-tags'),
+  
 };
 
 export default recipeAPI;
