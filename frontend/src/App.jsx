@@ -11,7 +11,8 @@ import Recipes from './pages/Recipes';
 import CreateRecipe from './pages/CreateRecipe';
 import EditRecipe from './pages/EditRecipe';
 import RecipeDetailPage from './pages/RecipeDetailPage';
-
+import Explore from './pages/Explore';
+import PublicRecipeDetail from './components/public/PublicRecipeDetail';
 import './App.css'
 
 // Protected Route component
@@ -72,6 +73,14 @@ function App() {
               </PublicRoute>
             } 
           />
+          <Route 
+            path="/explore" 
+            element={<Explore />
+            } />
+          <Route 
+            path="/recipe/:publicId" 
+            element={<PublicRecipeDetail />
+            } />
           
           {/* Protected routes */}
           <Route 
@@ -114,6 +123,7 @@ function App() {
               </ProtectedRoute>
             } 
           />
+
           
           {/* Catch all route */}
           <Route path="*" element={<Navigate to="/" />} />

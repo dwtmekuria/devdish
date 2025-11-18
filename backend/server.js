@@ -7,6 +7,8 @@ const connectDB = require('./config/database');
 const authRoutes = require('./routes/auth');
 const recipeRoutes = require('./routes/recipes');
 const uploadRoutes = require('./routes/upload');
+const publicRoutes = require('./routes/public');
+const userRoutes = require('./routes/users');
 
 // Connect to database
 connectDB();
@@ -18,11 +20,13 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
+app.use('/uploads/avatars', express.static(path.join(__dirname, 'uploads/avatars')));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/public', publicRoutes);
+app.use('/api/users', userRoutes);
 // Basic route
 app.get('/', (req, res) => {
   res.json({ message: 'DevDish API is running!' });

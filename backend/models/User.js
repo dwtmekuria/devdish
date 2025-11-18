@@ -24,6 +24,23 @@ const userSchema = new mongoose.Schema({
   avatar: {
     type: String,
     default: ''
+  },
+  bio: {
+    type: String,
+    maxlength: [500, 'Bio cannot exceed 500 characters'],
+    default: ''
+  },
+  location: {
+    type: String,
+    default: ''
+  },
+  website: {
+    type: String,
+    default: ''
+  },
+  socialMedia: {
+    twitter: { type: String, default: '' },
+    instagram: { type: String, default: '' }
   }
 }, {
   timestamps: true

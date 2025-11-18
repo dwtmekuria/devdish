@@ -4,6 +4,7 @@
 @contentType = application/json
 @auth = {{host}}/api/auth
 @recipe= {{host}}/api/recipes
+@public={{host}}/api/public/recipes/
 
 @token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTJlMDdiZmNkZWExMWIzZTY5Njg4ZiIsImlhdCI6MTc2Mjg0NTU2MSwiZXhwIjoxNzYzNDUwMzYxfQ.6Kv245cczaFBFb5dSmIwxkT9a21Sn1bACG2Xk9xOSzo
 ###
@@ -96,6 +97,11 @@ Content-Type: {{contentType}}
 Authorization: Bearer {{token}}
 
 ###
-GET http://{{recipe}}/tags
+GET http://{{recipe}}/tags/user-tags
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+###
+POST http://{{public}}/69142447bc9729c1839af18f/like
 Content-Type: {{contentType}}
 Authorization: Bearer {{token}}

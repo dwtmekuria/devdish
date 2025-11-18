@@ -81,6 +81,21 @@ const recipeSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  publicId:{
+    type: String,
+    unique:true,
+    sparse:true
+  }
+  ,
+  views:{
+    type:Number,
+    default:0
+  },
+  likes:[{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }]
+  ,
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -88,6 +103,14 @@ const recipeSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
+});
+
+// Generate public ID before saving
+recipeSchema.pre('save', function(next) {
+  if (this.isPublic && !this.publicId) {
+    this.publicId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  }
+  next();
 });
 
 // Index for better search performance

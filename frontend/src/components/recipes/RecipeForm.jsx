@@ -436,17 +436,32 @@ const RecipeForm = ({ recipe = null }) => {
               </div>
             </div>
 
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                name="isPublic"
-                checked={formData.isPublic}
-                onChange={handleInputChange}
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-              />
-              <label className="ml-2 block text-sm text-gray-700">
-                Make this recipe public (others can view it)
-              </label>
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <h2 className="text-lg font-semibold mb-4">Sharing & Privacy</h2>
+              
+              <div className="space-y-4">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="isPublic"
+                    checked={formData.isPublic}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <label className="ml-2 block text-sm text-gray-700">
+                    Make this recipe public
+                  </label>
+                </div>
+                
+                {formData.isPublic && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm text-blue-800">
+                      ✅ This recipe will be visible to everyone on the Explore page. 
+                      Other users will be able to view and like your creation!
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
