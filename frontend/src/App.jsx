@@ -13,6 +13,8 @@ import EditRecipe from './pages/EditRecipe';
 import RecipeDetailPage from './pages/RecipeDetailPage';
 import Explore from './pages/Explore';
 import PublicRecipeDetail from './components/public/PublicRecipeDetail';
+import UserProfile from './components/user/UserProfile';
+import ProfileSettings from './components/user/ProfileSettings';
 import './App.css'
 
 // Protected Route component
@@ -120,6 +122,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <RecipeDetailPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route path="/user/:userId" element={<UserProfile />} />
+          <Route 
+            path="/profile/settings" 
+            element={
+              <ProtectedRoute>
+                <ProfileSettings />
               </ProtectedRoute>
             } 
           />

@@ -97,22 +97,25 @@ const PublicRecipeCard = ({ recipe, onLike, isLiked = false, showLikeButton = tr
 
         {/* User Info & Actions */}
         <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            {recipe.user?.avatar ? (
+          <Link 
+            to={`/user/${recipe.userId?._id || recipe.userId}`}
+            className="flex items-center space-x-2 hover:underline"
+          >
+            {recipe.userId?.avatar ? (
               <img 
-                src={recipe.user.avatar} 
-                alt={recipe.user.username}
+                src={recipe.userId.avatar} 
+                alt={recipe.userId.username}
                 className="w-6 h-6 rounded-full"
               />
             ) : (
               <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs">
-                {recipe.user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                {recipe.userId?.username?.charAt(0)?.toUpperCase() || 'U'}
               </div>
             )}
             <span className="text-sm text-gray-600">
-              {recipe.user?.username || 'Unknown'}
+              {recipe.userId?.username || 'Unknown'}
             </span>
-          </div>
+          </Link>
           
           <Link 
             to={`/recipe/${recipe.publicId}`}

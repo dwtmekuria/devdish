@@ -9,7 +9,7 @@ const getPublicRecipe = async (req, res) => {
     const recipe = await Recipe.findOne({ 
       publicId,
       isPublic: true 
-    }).populate('userId', 'username avatar'); // Use userId
+    }).populate('userId', 'username avatar');
 
     if (!recipe) {
       return res.status(404).json({
@@ -69,11 +69,11 @@ const getPublicRecipes = async (req, res) => {
     sortConfig[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
     const recipes = await Recipe.find(filter)
-      .populate('userId', 'username avatar') // Use userId
+      .populate('userId', 'username avatar')
       .sort(sortConfig)
       .limit(limit * 1)
       .skip((page - 1) * limit)
-      .select('-ingredients.notes -instructions'); // Limit data for list view
+      .select('-ingredients.notes -instructions');
 
     const total = await Recipe.countDocuments(filter);
 
@@ -148,7 +148,7 @@ const getLikedRecipes = async (req, res) => {
     const recipes = await Recipe.find({
       likes: userId,
       isPublic: true
-    }).populate('userId', 'username avatar'); // Use userId
+    }).populate('userId', 'username avatar');
 
     res.json({
       success: true,

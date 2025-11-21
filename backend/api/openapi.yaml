@@ -1,0 +1,1170 @@
+openapi: 3.0.0
+info:
+  title: DevDish API
+  version: 1.0.0
+  description: A comprehensive recipe management API built with Node.js, Express, and MongoDB
+  contact:
+    name: DevDish API Support
+    email: support@devdish.com
+  license:
+    name: MIT
+    url: https://spdx.org/licenses/MIT.html
+
+servers:
+  - url: http://localhost:5000/api
+    description: Development server
+  - url: https://your-deployed-app.herokuapp.com/api
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Recipes
+    description: Recipe management operations
+  - name: Public
+    description: Public recipe access and social features
+  - name: Users
+    description: User profile management
+  - name: Upload
+    description: File upload operations
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  example: "john_doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+                password:
+                  type: string
+                  minLength: 6
+                  example: "password123"
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: '#/components/schemas/User'
+                          token:
+                            type: string
+                            description: JWT token
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: User with this email or username already exists
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+                password:
+                  type: string
+                  example: "password123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: '#/components/schemas/User'
+                          token:
+                            type: string
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Invalid credentials
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /recipes:
+    get:
+      tags:
+        - Recipes
+      summary: Get all recipes for current user
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 12
+          description: Number of recipes per page
+        - in: query
+          name: category
+          schema:
+            type: string
+            enum: [Breakfast, Lunch, Dinner, Dessert, Snack, Beverage, Other, All]
+          description: Filter by category
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search in title, description, ingredients, or instructions
+        - in: query
+          name: difficulty
+          schema:
+            type: string
+            enum: [Easy, Medium, Hard, All]
+          description: Filter by difficulty
+        - in: query
+          name: maxTime
+          schema:
+            type: integer
+          description: Maximum total cooking time in minutes
+        - in: query
+          name: tags
+          schema:
+            type: array
+            items:
+              type: string
+          description: Filter by tags
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [createdAt, title, difficulty, totalTime]
+            default: createdAt
+          description: Field to sort by
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort order
+      responses:
+        '200':
+          description: Recipes retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          recipes:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Recipe'
+                          totalPages:
+                            type: integer
+                          currentPage:
+                            type: integer
+                          total:
+                            type: integer
+                          availableTags:
+                            type: array
+                            items:
+                              type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+    post:
+      tags:
+        - Recipes
+      summary: Create a new recipe
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeInput'
+      responses:
+        '201':
+          description: Recipe created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          recipe:
+                            $ref: '#/components/schemas/Recipe'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /recipes/{id}:
+    get:
+      tags:
+        - Recipes
+      summary: Get a single recipe
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Recipe ID
+      responses:
+        '200':
+          description: Recipe retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          recipe:
+                            $ref: '#/components/schemas/Recipe'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+    put:
+      tags:
+        - Recipes
+      summary: Update a recipe
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Recipe ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeInput'
+      responses:
+        '200':
+          description: Recipe updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          recipe:
+                            $ref: '#/components/schemas/Recipe'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+    delete:
+      tags:
+        - Recipes
+      summary: Delete a recipe
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Recipe ID
+      responses:
+        '200':
+          description: Recipe deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /recipes/stats:
+    get:
+      tags:
+        - Recipes
+      summary: Get recipe statistics for current user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          totalRecipes:
+                            type: integer
+                          categoryStats:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                _id:
+                                  type: string
+                                count:
+                                  type: integer
+                          difficultyStats:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                _id:
+                                  type: string
+                                count:
+                                  type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /recipes/tags/user-tags:
+    get:
+      tags:
+        - Recipes
+      summary: Get all unique tags for current user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Tags retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          tags:
+                            type: array
+                            items:
+                              type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /public/recipes:
+    get:
+      tags:
+        - Public
+      summary: Get all public recipes
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 12
+          description: Number of recipes per page
+        - in: query
+          name: category
+          schema:
+            type: string
+            enum: [Breakfast, Lunch, Dinner, Dessert, Snack, Beverage, Other, All]
+          description: Filter by category
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search in title or description
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [createdAt, title, views]
+            default: createdAt
+          description: Field to sort by
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort order
+      responses:
+        '200':
+          description: Public recipes retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          recipes:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Recipe'
+                          totalPages:
+                            type: integer
+                          currentPage:
+                            type: integer
+                          total:
+                            type: integer
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /public/recipes/{publicId}:
+    get:
+      tags:
+        - Public
+      summary: Get a public recipe by public ID
+      parameters:
+        - in: path
+          name: publicId
+          required: true
+          schema:
+            type: string
+          description: Recipe public ID
+      responses:
+        '200':
+          description: Public recipe retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          recipe:
+                            $ref: '#/components/schemas/Recipe'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /public/recipes/{id}/like:
+    post:
+      tags:
+        - Public
+      summary: Like or unlike a recipe
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Recipe ID
+      responses:
+        '200':
+          description: Like status toggled successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          liked:
+                            type: boolean
+                          likeCount:
+                            type: integer
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /public/recipes/liked/mine:
+    get:
+      tags:
+        - Public
+      summary: Get current user's liked recipes
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liked recipes retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          recipes:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Recipe'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /users/{userId}/profile:
+    get:
+      tags:
+        - Users
+      summary: Get user profile
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+          description: User ID
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            allOf:
+                              - $ref: '#/components/schemas/User'
+                              - type: object
+                                properties:
+                                  stats:
+                                    type: object
+                                    properties:
+                                      publicRecipes:
+                                        type: integer
+                                      totalRecipes:
+                                        type: integer
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /users/{userId}/recipes:
+    get:
+      tags:
+        - Users
+      summary: Get user's public recipes
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+          description: User ID
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 12
+          description: Number of recipes per page
+      responses:
+        '200':
+          description: User recipes retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          recipes:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Recipe'
+                          totalPages:
+                            type: integer
+                          currentPage:
+                            type: integer
+                          total:
+                            type: integer
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /users/profile:
+    put:
+      tags:
+        - Users
+      summary: Update user profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /users/avatar:
+    post:
+      tags:
+        - Users
+      summary: Upload user avatar
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+                  description: Avatar image file
+      responses:
+        '200':
+          description: Avatar uploaded successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: '#/components/schemas/User'
+        '400':
+          description: No file uploaded or invalid file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /upload/image:
+    post:
+      tags:
+        - Upload
+      summary: Upload recipe image
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Recipe image file
+      responses:
+        '200':
+          description: Image uploaded successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Success'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          imageUrl:
+                            type: string
+        '400':
+          description: No file uploaded or invalid file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: User ID
+        username:
+          type: string
+          description: User username
+          minLength: 3
+        email:
+          type: string
+          format: email
+          description: User email
+        avatar:
+          type: string
+          description: User avatar URL
+        bio:
+          type: string
+          description: User bio
+          maxLength: 500
+        location:
+          type: string
+          description: User location
+        website:
+          type: string
+          description: User website URL
+        socialMedia:
+          type: object
+          properties:
+            twitter:
+              type: string
+            instagram:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UserUpdate:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 3
+        bio:
+          type: string
+          maxLength: 500
+        location:
+          type: string
+        website:
+          type: string
+        socialMedia:
+          type: object
+          properties:
+            twitter:
+              type: string
+            instagram:
+              type: string
+
+    Recipe:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Recipe ID
+        title:
+          type: string
+          description: Recipe title
+          maxLength: 100
+        description:
+          type: string
+          description: Recipe description
+          maxLength: 500
+        ingredients:
+          type: array
+          items:
+            type: object
+            required:
+              - name
+              - quantity
+              - unit
+            properties:
+              name:
+                type: string
+                description: Ingredient name
+              quantity:
+                type: number
+                description: Ingredient quantity
+                minimum: 0
+              unit:
+                type: string
+                enum: [g, kg, ml, l, cup, tbsp, tsp, piece, pinch, to taste]
+                description: Ingredient unit
+              notes:
+                type: string
+                description: Additional notes about ingredient
+        instructions:
+          type: array
+          items:
+            type: string
+            description: Cooking instruction step
+        prepTime:
+          type: number
+          description: Preparation time in minutes
+          minimum: 0
+        cookTime:
+          type: number
+          description: Cooking time in minutes
+          minimum: 0
+        servings:
+          type: number
+          description: Number of servings
+          minimum: 1
+        difficulty:
+          type: string
+          enum: [Easy, Medium, Hard]
+          description: Recipe difficulty level
+        category:
+          type: string
+          enum: [Breakfast, Lunch, Dinner, Dessert, Snack, Beverage, Other]
+          description: Recipe category
+        tags:
+          type: array
+          items:
+            type: string
+            description: Recipe tags
+        image:
+          type: string
+          description: Recipe image URL
+        isPublic:
+          type: boolean
+          description: Whether the recipe is publicly visible
+        publicId:
+          type: string
+          description: Public ID for sharing
+        views:
+          type: number
+          description: Number of views
+          minimum: 0
+        likes:
+          type: array
+          items:
+            type: string
+          description: User IDs who liked the recipe
+        userId:
+          type: string
+          description: User ID who created the recipe
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    RecipeInput:
+      type: object
+      required:
+        - title
+        - ingredients
+        - instructions
+        - prepTime
+        - cookTime
+        - servings
+        - difficulty
+        - category
+      properties:
+        title:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        ingredients:
+          type: array
+          items:
+            type: object
+            required:
+              - name
+              - quantity
+              - unit
+            properties:
+              name:
+                type: string
+              quantity:
+                type: number
+                minimum: 0
+              unit:
+                type: string
+                enum: [g, kg, ml, l, cup, tbsp, tsp, piece, pinch, to taste]
+              notes:
+                type: string
+        instructions:
+          type: array
+          items:
+            type: string
+        prepTime:
+          type: number
+          minimum: 0
+        cookTime:
+          type: number
+          minimum: 0
+        servings:
+          type: number
+          minimum: 1
+        difficulty:
+          type: string
+          enum: [Easy, Medium, Hard]
+        category:
+          type: string
+          enum: [Breakfast, Lunch, Dinner, Dessert, Snack, Beverage, Other]
+        tags:
+          type: array
+          items:
+            type: string
+        image:
+          type: string
+        isPublic:
+          type: boolean
+          default: false
+
+    Success:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          description: Success message
+        data:
+          type: object
+          description: Response data
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          description: Error message
+        error:
+          type: string
+          description: Detailed error information
+        errors:
+          type: array
+          items:
+            type: string
+          description: Validation errors
+
+  responses:
+    UnauthorizedError:
+      description: Access token is missing or invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Not authorized to access this route
+
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Validation failed
+            errors:
+              - Username must be at least 3 characters long
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Recipe not found
+
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Internal server error
