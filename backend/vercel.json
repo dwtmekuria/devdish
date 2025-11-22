@@ -8,15 +8,31 @@
   ],
   "routes": [
     {
+      "src": "/api-docs/(.*)",
+      "dest": "server.js"
+    },
+    {
       "src": "/api/(.*)",
-      "dest": "/server.js"
+      "dest": "server.js"
     },
     {
       "src": "/(.*)",
-      "dest": "/server.js"
+      "dest": "server.js"
     }
   ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  "headers": [
+    {
+      "source": "/api-docs/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600" },
+        { "key": "Content-Type", "value": "application/javascript" }
+      ]
+    },
+    {
+      "source": "/api-docs/swagger-ui.css",
+      "headers": [
+        { "key": "Content-Type", "value": "text/css" }
+      ]
+    }
+  ]
 }
