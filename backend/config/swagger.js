@@ -7,7 +7,7 @@ const swaggerDocument = YAML.load(path.join(__dirname, '../api/openapi.yaml'));
 if (process.env.NODE_ENV === 'production') {
   swaggerDocument.servers = [
     {
-      url: process.env.BACKEND_URL || 'https://your-deployed-app.herokuapp.com/api',
+      url: process.env.BACKEND_URL,
       description: 'Production server'
     }
   ];
@@ -20,7 +20,20 @@ if (process.env.NODE_ENV === 'production') {
   ];
 }
 
+const swaggerOptions = {
+  customSiteTitle: "DevDish API Documentation",
+};
+
+if (process.env.NODE_ENV === 'production') {
+  swaggerOptions.customCssUrl = 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.min.css';
+  swaggerOptions.customJs = [
+    'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-bundle.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-standalone-preset.js',
+  ];
+}
+
 module.exports = {
   swaggerDocument,
-  swaggerUi
+  swaggerUi,
+  swaggerOptions
 };

@@ -4,7 +4,7 @@ const path = require('path');
 require('dotenv').config();
 
 const connectDB = require('./config/database');
-const { swaggerDocument, swaggerUi } = require('./config/swagger'); // Updated import
+const { swaggerDocument, swaggerUi,swaggerOptions } = require('./config/swagger'); // Updated import
 const authRoutes = require('./routes/auth');
 const recipeRoutes = require('./routes/recipes');
 const publicRoutes = require('./routes/public');
@@ -48,7 +48,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads/avatars', express.static(path.join(__dirname, 'uploads/avatars')));
 
 // Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument,swaggerOptions,{
   explorer: true,
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'DevDish API Documentation'
