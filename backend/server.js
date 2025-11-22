@@ -17,24 +17,24 @@ connectDB();
 const app = express();
 
 // Security middleware for production
-if (process.env.NODE_ENV === 'production') {
-  const helmet = require('helmet');
-  const compression = require('compression');
-  const rateLimit = require('express-rate-limit');
+// if (process.env.NODE_ENV === 'production') {
+//   const helmet = require('helmet');
+//   const compression = require('compression');
+//   const rateLimit = require('express-rate-limit');
   
-  app.use(helmet());
-  app.use(compression());
+//   app.use(helmet());
+//   app.use(compression());
 
-  const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100
-  });
-  app.use('/api/', limiter);
-}
+//   const limiter = rateLimit({
+//     windowMs: 15 * 60 * 1000,
+//     max: 100
+//   });
+//   app.use('/api/', limiter);
+// }
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
 }));
 
