@@ -137,6 +137,16 @@ const UserProfile = () => {
                   🐦 @{user.socialMedia.twitter}
                 </a>
               )}
+              {user.socialMedia?.instagram && (
+                <a 
+                  href={`https://instagram.com/${user.socialMedia.instagram}`}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center text-pink-600 hover:text-pink-700"
+                >
+                  📸 @{user.socialMedia.instagram}
+                </a>
+              )}
             </div>
           </div>
         </div>
