@@ -1,5 +1,5 @@
-import React, { useState,useEffect } from 'react';
-import {useDispatch, useSelector } from 'react-redux';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { fetchRecipes, deleteRecipe, setFilters } from '../../store/slices/recipeSlice';
 import RecipeCard from './RecipeCard';
 import RecipeFilters from './RecipeFilters';
@@ -20,10 +20,11 @@ const RecipeList = () => {
     sortOrder: 'desc'
   });
 
+  const [showFilters, setShowFilters] = useState(true);
+
   useEffect(() => {
     dispatch(fetchRecipes(enhancedFilters));
   }, [dispatch, enhancedFilters]);
-
 
   const handleDelete = async (recipeId) => {
     if (window.confirm('Are you sure you want to delete this recipe?')) {
@@ -31,7 +32,6 @@ const RecipeList = () => {
       dispatch(fetchRecipes(enhancedFilters));
     }
   };
-
 
   const handleSearch = (searchTerm, searchType = 'all') => {
     setEnhancedFilters(prev => ({
@@ -60,7 +60,9 @@ const RecipeList = () => {
     });
   };
 
-
+  const toggleFilters = () => {
+    setShowFilters(!showFilters);
+  };
 
   if (loading) {
     return (
@@ -81,7 +83,7 @@ const RecipeList = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Recipes</h1>
           <p className="text-gray-600">
@@ -99,20 +101,40 @@ const RecipeList = () => {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex justify-center">
+      {/* Search Bar with Toggle Button */}
+      <div className="flex justify-center items-center space-x-4">
         <SearchBar 
           onSearch={handleSearch}
           initialValue={enhancedFilters.search}
         />
+        <button
+          onClick={toggleFilters}
+          className="flex self-baseline h-10.5 space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+        >
+          <span className="text-sm font-medium text-gray-700">
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
+          </span>
+          <svg 
+            className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+              showFilters ? 'rotate-180' : ''
+            }`}
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
       </div>
 
-      {/* Advanced Filters */}
-      <AdvancedFilters 
-        filters={enhancedFilters}
-        onFilterChange={handleFilterChange}
-        onClearFilters={handleClearFilters}
-      />
+      {/* Advanced Filters with Toggle */}
+      {showFilters && (
+        <AdvancedFilters 
+          filters={enhancedFilters}
+          onFilterChange={handleFilterChange}
+          onClearFilters={handleClearFilters}
+        />
+      )}
 
       {/* Recipe Grid */}
       {recipes.length === 0 ? (
@@ -122,11 +144,11 @@ const RecipeList = () => {
             No recipes found
           </h3>
           <p className="text-gray-600 mb-4">
-            {filters.search || filters.category !== 'All' 
+            {enhancedFilters.search || enhancedFilters.category !== 'All' 
               ? 'Try adjusting your filters' 
               : 'Get started by creating your first recipe!'}
           </p>
-          {!(filters.search || filters.category !== 'All') && (
+          {!(enhancedFilters.search || enhancedFilters.category !== 'All') && (
             <a href="/recipes/new" className="btn-primary">
               Create Your First Recipe
             </a>
@@ -144,7 +166,7 @@ const RecipeList = () => {
             ))}
           </div>
 
-          {/* Pagination - We'll implement this later */}
+          {/* Pagination */}
           {pagination.totalPages > 1 && (
             <div className="flex justify-center mt-8">
               <div className="flex space-x-2">
