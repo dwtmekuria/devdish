@@ -1,13 +1,18 @@
-const swaggerUi = require('swagger-ui-express');
+// backend/config/swagger.js
 const YAML = require('yamljs');
 const path = require('path');
 
 const swaggerDocument = YAML.load(path.join(__dirname, '../api/openapi.yaml'));
 
+// Ensure openapi version is correct
+if (!swaggerDocument.openapi) {
+  swaggerDocument.openapi = '3.0.0';
+}
+
 if (process.env.NODE_ENV === 'production') {
   swaggerDocument.servers = [
     {
-      url: process.env.BACKEND_URL,
+      url: process.env.BACKEND_URL || 'https://devdish-backend.vercel.app/api',
       description: 'Production server'
     }
   ];
@@ -20,20 +25,6 @@ if (process.env.NODE_ENV === 'production') {
   ];
 }
 
-const swaggerOptions = {
-  customSiteTitle: "DevDish API Documentation",
-};
-
-if (process.env.NODE_ENV === 'production') {
-  swaggerOptions.customCssUrl = 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.min.css';
-  swaggerOptions.customJs = [
-    'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-bundle.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-standalone-preset.js',
-  ];
-}
-
 module.exports = {
-  swaggerDocument,
-  swaggerUi,
-  swaggerOptions
+  swaggerDocument
 };

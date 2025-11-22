@@ -4,12 +4,13 @@ const path = require('path');
 require('dotenv').config();
 
 const connectDB = require('./config/database');
-const { swaggerDocument, swaggerUi,swaggerOptions } = require('./config/swagger'); // Updated import
+const { swaggerDocument, swaggerUi } = require('./config/swagger'); // Updated import
 const authRoutes = require('./routes/auth');
 const recipeRoutes = require('./routes/recipes');
 const publicRoutes = require('./routes/public');
 const userRoutes = require('./routes/users');
 const uploadRoutes = require('./routes/upload');
+const createSwaggerHTML = require('./config/swagger-html');
 
 // Connect to database
 connectDB();
@@ -47,12 +48,20 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Serve avatar uploads
 app.use('/uploads/avatars', express.static(path.join(__dirname, 'uploads/avatars')));
 
-// Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument,swaggerOptions,{
-  explorer: true,
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'DevDish API Documentation'
-}));
+//Swagger Documentation
+// For production: Use custom HTML with CDN
+if (process.env.NODE_ENV === 'production') {
+  app.get('/api-docs', (req, res) => {
+    res.send(createSwaggerHTML(swaggerDocument));
+  });
+} else {
+  // For development: Use swagger-ui-express normally
+  const swaggerUi = require('swagger-ui-express');
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+    customSiteTitle: "DevDish API Documentation",
+    explorer: true
+  }));
+}
 
 // Routes
 app.use('/api/auth', authRoutes);
