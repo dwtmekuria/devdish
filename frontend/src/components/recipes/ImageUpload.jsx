@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { uploadAPI } from '../../services/uploadAPI';
+import { getImageUrl } from '../../services/api';
 
-const ImageUpload = ({ onImageUpload, currentImage = '' }) => {
+const ImageUpload = ({ onImageUpload, currentImage = '', recipeId = null }) => {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(currentImage);
 
@@ -36,10 +37,15 @@ const ImageUpload = ({ onImageUpload, currentImage = '' }) => {
       const formData = new FormData();
       formData.append('image', file);
 
-      const response = await uploadAPI.uploadImage(formData);
-      const imageUrl = response.data.data.imageUrl;
+      const response = await uploadAPI.uploadImage(formData, recipeId);
       
-      onImageUpload(imageUrl);
+      if (recipeId) {
+        // If we have a recipe ID, the image was saved to the recipe
+        onImageUpload(recipeId); // Pass recipeId to indicate image is saved
+      } else {
+        // For new recipes, we'll handle the image in the form submission
+        onImageUpload(file); // Pass the file object for form submission
+      }
     } catch (error) {
       console.error('Upload failed:', error);
       alert('Failed to upload image. Please try again.');
@@ -51,8 +57,13 @@ const ImageUpload = ({ onImageUpload, currentImage = '' }) => {
 
   const removeImage = () => {
     setPreviewUrl('');
-    onImageUpload('');
+    onImageUpload(null);
   };
+
+  // Generate image URL for display
+  const displayUrl = currentImage && currentImage.startsWith?.('http') 
+    ? currentImage 
+    : previewUrl;
 
   return (
     <div className="space-y-4">
@@ -61,10 +72,10 @@ const ImageUpload = ({ onImageUpload, currentImage = '' }) => {
       </label>
       
       {/* Image Preview */}
-      {previewUrl && (
+      {displayUrl && (
         <div className="relative">
           <img 
-            src={previewUrl} 
+            src={displayUrl} 
             alt="Recipe preview" 
             className="h-48 w-full object-cover rounded-lg"
           />

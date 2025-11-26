@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { userAPI } from '../../services/userAPI';
 import PublicRecipeCard from '../public/PublicRecipeCard';
+import { getImageUrl } from '../../services/api';
 
 const UserProfile = () => {
   const { userId } = useParams();
@@ -9,6 +10,9 @@ const UserProfile = () => {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Generate avatar URL
+  const avatarUrl = userId ? getImageUrl.avatar(userId) : '';
 
   useEffect(() => {
     fetchUserProfile();
@@ -66,17 +70,22 @@ const UserProfile = () => {
         <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
           {/* Avatar */}
           <div className="shrink-0">
-            {user.avatar ? (
+            {userId ? (
               <img 
-                src={user.avatar} 
+                src={avatarUrl} 
                 alt={user.username}
                 className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md"
+                onError={(e) => {
+                  // Fallback to initial if image fails to load
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
               />
-            ) : (
-              <div className="w-24 h-24 bg-primary-500 rounded-full flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-md">
-                {user.username?.charAt(0)?.toUpperCase() || 'U'}
-              </div>
-            )}
+            ) : 
+            <div className="w-24 h-24 bg-primary-500 rounded-full flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-md">
+              {user.username?.charAt(0)?.toUpperCase() || 'U'}
+            </div>
+            }
           </div>
 
           {/* User Info */}

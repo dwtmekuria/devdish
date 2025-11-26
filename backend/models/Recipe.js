@@ -74,8 +74,9 @@ const recipeSchema = new mongoose.Schema({
     trim: true
   }],
   image: {
-    type: String,
-    default: ''
+    data: Buffer,
+    contentType: String,
+    filename: String
   },
   isPublic: {
     type: Boolean,
@@ -85,8 +86,7 @@ const recipeSchema = new mongoose.Schema({
     type: String,
     unique:true,
     sparse:true
-  }
-  ,
+  },
   views:{
     type:Number,
     default:0
@@ -94,8 +94,7 @@ const recipeSchema = new mongoose.Schema({
   likes:[{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
-  }]
-  ,
+  }],
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

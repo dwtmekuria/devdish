@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { publicAPI } from '../../services/publicAPI';
 import { useSelector } from 'react-redux';
-
+import { getImageUrl } from '../../services/api'; 
 const PublicRecipeDetail = () => {
   const { publicId } = useParams();
   const navigate = useNavigate();
@@ -61,6 +61,9 @@ const PublicRecipeDetail = () => {
     });
   };
 
+  // Generate image URL
+  const imageUrl = recipe?._id ? getImageUrl.recipe(recipe._id) + '?t=' + Date.now() : '';
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -89,6 +92,7 @@ const PublicRecipeDetail = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+  
   if (!recipe) {
     return null;
   }
@@ -135,47 +139,25 @@ const PublicRecipeDetail = () => {
         </div>
       </div>
 
-      {/* Recipe content remains similar to private recipe detail */}
-      {/* ... (copy the recipe detail layout from previous phase) */}
-          <div className="max-w-4xl mx-auto">
-      {/* Header with Actions */}
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <button
-            onClick={() => navigate('/recipes')}
-            className="text-primary-600 hover:text-primary-700 font-medium mb-2"
-          >
-            ← Back to Recipes
-          </button>
-          <h1 className="text-3xl font-bold text-gray-900">{recipe.title}</h1>
-          <p className="text-gray-600 mt-2">{recipe.description}</p>
-        </div>
-        
-        {/*<div className="flex space-x-2">
-           <button onClick={handleEdit} className="btn-secondary">
-            Edit Recipe
-          </button> 
-          <button onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">
-            Delete
-          </button>
-        </div>*/}
-      </div>
-
       {/* Recipe Image */}
       <div className="mb-8">
         <div className="h-96 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
-          {recipe.image ? (
+          {recipe._id ? (
             <img 
-              src={recipe.image} 
+              src={imageUrl} 
               alt={recipe.title}
               className="h-full w-full object-cover"
+              onError={(e) => {
+                // Hide the image and show fallback if it fails to load
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
             />
-          ) : (
-            <div className="text-gray-400 text-center">
-              <div className="text-6xl mb-4">🍳</div>
-              <p className="text-lg">No Image Available</p>
-            </div>
-          )}
+          ) : null}
+          <div className="text-gray-400 text-center" style={{ display: recipe._id ? 'none' : 'flex' }}>
+            <div className="text-6xl mb-4">🍳</div>
+            <p className="text-lg">No Image Available</p>
+          </div>
         </div>
       </div>
 
@@ -217,6 +199,37 @@ const PublicRecipeDetail = () => {
               <div className="flex justify-between">
                 <span className="text-gray-600">Category</span>
                 <span className="font-medium">{recipe.category}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* User Info */}
+          <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+            <h2 className="text-lg font-semibold mb-4">Created By</h2>
+            <div className="flex items-center space-x-3">
+              {recipe.userId?.avatar ? (
+                <img 
+                  src={getImageUrl.avatar(recipe.userId._id) + '?t=' + Date.now()} 
+                  alt={recipe.userId.username}
+                  className="w-10 h-10 rounded-full"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+              ) : 
+              <div className="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                {recipe.userId?.username?.charAt(0)?.toUpperCase() || 'U'}
+              </div>
+              }
+              <div>
+                <p className="font-medium text-gray-900">{recipe.userId?.username || 'Unknown User'}</p>
+                <button 
+                  onClick={() => navigate(`/user/${recipe.userId?._id || recipe.userId}`)}
+                  className="text-primary-600 hover:text-primary-700 text-sm"
+                >
+                  View Profile
+                </button>
               </div>
             </div>
           </div>
@@ -282,7 +295,6 @@ const PublicRecipeDetail = () => {
           </div>
         </div>
       </div>
-    </div>
     </div>
   );
 };

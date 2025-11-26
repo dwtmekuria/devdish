@@ -4,7 +4,7 @@ const Recipe = require('../models/Recipe');
 // Get user profile
 const getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId).select('-password');
+    const user = await User.findById(req.params.userId).select('-password -avatar.data');
     
     if (!user) {
       return res.status(404).json({
@@ -79,7 +79,7 @@ const updateUserProfile = async (req, res) => {
         new: true, 
         runValidators: true 
       }
-    ).select('-password');
+    ).select('-password -avatar.data');
 
     res.json({
       success: true,
@@ -105,6 +105,7 @@ const getUserPublicRecipes = async (req, res) => {
       userId: req.params.userId,
       isPublic: true
     })
+    .select('-image.data') // Exclude image data from list
     .sort({ createdAt: -1 })
     .limit(limit * 1)
     .skip((page - 1) * limit);
@@ -143,13 +144,17 @@ const uploadAvatar = async (req, res) => {
       });
     }
 
-    const avatarUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-
     const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
-      { avatar: avatarUrl },
+      { 
+        avatar: {
+          data: req.file.buffer,
+          contentType: req.file.mimetype,
+          filename: req.file.originalname
+        }
+      },
       { new: true }
-    ).select('-password');
+    ).select('-password -avatar.data'); // Don't send image data in response
 
     res.json({
       success: true,

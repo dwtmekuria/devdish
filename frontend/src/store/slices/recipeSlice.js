@@ -148,6 +148,9 @@ const recipeSlice = createSlice({
       .addCase(createRecipe.fulfilled, (state, action) => {
         state.recipes.unshift(action.payload);
       })
+      .addCase(createRecipe.rejected, (state, action) => {
+        state.error = action.payload;
+      })
       // Update Recipe
       .addCase(updateRecipe.fulfilled, (state, action) => {
         const index = state.recipes.findIndex(recipe => recipe._id === action.payload._id);
@@ -155,6 +158,9 @@ const recipeSlice = createSlice({
           state.recipes[index] = action.payload;
         }
         state.currentRecipe = action.payload;
+      })
+      .addCase(updateRecipe.rejected, (state, action) => {
+        state.error = action.payload;
       })
       // Delete Recipe
       .addCase(deleteRecipe.fulfilled, (state, action) => {

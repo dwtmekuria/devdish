@@ -58,6 +58,7 @@ const getRecipes = async (req, res) => {
     sortConfig[sortBy] = sortOrder === 'desc' ? -1 : 1;
     
     const recipes = await Recipe.find(filter)
+      .select('-image.data') // Exclude image data from list
       .sort(sortConfig)
       .limit(limit * 1)
       .skip((page - 1) * limit);
@@ -87,32 +88,13 @@ const getRecipes = async (req, res) => {
   }
 };
 
-// Get all unique tags for user
-const getUserTags = async (req, res) => {
-  try {
-    const tags = await Recipe.distinct('tags', { userId: req.user.id });
-    
-    res.json({
-      success: true,
-      data: { tags }
-    });
-    
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching tags',
-      error: error.message
-    });
-  }
-};
-
 // Get single recipe
 const getRecipe = async (req, res) => {
   try {
     const recipe = await Recipe.findOne({
       _id: req.params.id,
       userId: req.user.id
-    });
+    }).select('-image.data'); // Exclude image data from single fetch
     
     if (!recipe) {
       return res.status(404).json({
@@ -134,7 +116,6 @@ const getRecipe = async (req, res) => {
     });
   }
 };
-
 // Create new recipe
 const createRecipe = async (req, res) => {
   try {
@@ -255,6 +236,24 @@ const getRecipeStats = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching recipe statistics',
+      error: error.message
+    });
+  }
+};
+
+const getUserTags = async (req, res) => {
+  try {
+    const tags = await Recipe.distinct('tags', { userId: req.user.id });
+    
+    res.json({
+      success: true,
+      data: { tags }
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching tags',
       error: error.message
     });
   }

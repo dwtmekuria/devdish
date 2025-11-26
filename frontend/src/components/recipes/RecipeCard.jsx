@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { getImageUrl } from '../../services/api';
 
 const RecipeCard = ({ recipe, onDelete }) => {
   const totalTime = recipe.prepTime + recipe.cookTime;
@@ -13,22 +14,29 @@ const RecipeCard = ({ recipe, onDelete }) => {
     }
   };
 
+  // Generate image URL with cache busting
+  const imageUrl = recipe._id ? getImageUrl.recipe(recipe._id) + '?t=' + Date.now() : '';
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
       {/* Recipe Image */}
-      <div className="h-48 bg-gray-200 flex items-center justify-center">
-        {recipe.image ? (
+      <div className="h-48 bg-gray-200 flex items-center justify-center relative overflow-hidden">
+        {recipe._id ? (
           <img 
-            src={recipe.image} 
+            src={imageUrl} 
             alt={recipe.title}
             className="h-full w-full object-cover"
+            onError={(e) => {
+              // Hide the image and show fallback if it fails to load
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
           />
-        ) : (
-          <div className="text-gray-400 text-center">
-            <div className="text-4xl mb-2">🍳</div>
-            <p className="text-sm">No Image</p>
-          </div>
-        )}
+        ) : null}
+        <div className="text-gray-400 text-center" style={{ display: recipe._id ? 'none' : 'flex' }}>
+          <div className="text-4xl mb-2">🍳</div>
+          <p className="text-sm">No Image</p>
+        </div>
       </div>
 
       {/* Recipe Content */}

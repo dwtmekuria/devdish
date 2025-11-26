@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { userAPI } from '../../services/userAPI';
 import { loadUser } from '../../store/slices/authSlice';
+import { getImageUrl } from '../../services/api';
 
 const ProfileSettings = () => {
   const dispatch = useDispatch();
@@ -21,6 +22,9 @@ const ProfileSettings = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  // Generate avatar URL
+  const avatarUrl = user?._id ? getImageUrl.avatar(user._id) + '?t=' + Date.now() : '';
 
   useEffect(() => {
     if (user) {
@@ -101,8 +105,10 @@ const ProfileSettings = () => {
       await userAPI.uploadAvatar(formData);
       setMessage('Avatar updated successfully!');
       
-      // Reload user data
-      dispatch(loadUser());
+      // Reload user data - add timestamp to force refresh
+      setTimeout(() => {
+        dispatch(loadUser());
+      }, 100);
       
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to upload avatar');
@@ -135,13 +141,20 @@ const ProfileSettings = () => {
           </label>
           
           <div className="flex items-center space-x-6">
-            {user?.avatar ? (
+            {user?._id ? (
               <img 
-                src={user.avatar} 
+                src={avatarUrl} 
                 alt={user.username}
                 className="w-20 h-20 rounded-full object-cover"
+                onError={(e) => {
+                  // Fallback to initial if image fails to load
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
               />
-            ) : (
+            ) : null}
+            
+            {!user?.avatar?.data && (
               <div className="w-20 h-20 bg-primary-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
                 {user?.username?.charAt(0)?.toUpperCase() || 'U'}
               </div>

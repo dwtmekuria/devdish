@@ -1,11 +1,21 @@
 import api from './api';
 
 export const uploadAPI = {
-  uploadImage: (formData) => api.post('/upload/image', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
+  uploadImage: (formData, recipeId = null) => {
+    const data = new FormData();
+    if (recipeId) {
+      data.append('recipeId', recipeId);
     }
-  })
+    if (formData.get('image')) {
+      data.append('image', formData.get('image'));
+    }
+    
+    return api.post('/upload/image', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  }
 };
 
 export default uploadAPI;

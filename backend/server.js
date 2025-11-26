@@ -43,10 +43,10 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve static files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-// Serve avatar uploads
-app.use('/uploads/avatars', express.static(path.join(__dirname, 'uploads/avatars')));
+// // Serve static files
+// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// // Serve avatar uploads
+// app.use('/uploads/avatars', express.static(path.join(__dirname, 'uploads/avatars')));
 
 //Swagger Documentation
 // For production: Use custom HTML with CDN

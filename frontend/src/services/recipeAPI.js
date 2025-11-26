@@ -1,7 +1,6 @@
 import api from './api';
 
 export const recipeAPI = {
-
   // Enhanced getRecipes with all filter parameters
   getRecipes: (params = {}) => {
     const cleanParams = Object.fromEntries(
@@ -16,11 +15,15 @@ export const recipeAPI = {
   // Get single recipe
   getRecipe: (id) => api.get(`/recipes/${id}`),
   
-  // Create new recipe
-  createRecipe: (recipeData) => api.post('/recipes', recipeData),
+  // Create new recipe (JSON only)
+  createRecipe: (recipeData) => {
+    return api.post('/recipes', recipeData);
+  },
   
-  // Update recipe
-  updateRecipe: (id, recipeData) => api.put(`/recipes/${id}`, recipeData),
+  // Update recipe (JSON only)
+  updateRecipe: (id, recipeData) => {
+    return api.put(`/recipes/${id}`, recipeData);
+  },
   
   // Delete recipe
   deleteRecipe: (id) => api.delete(`/recipes/${id}`),
@@ -28,7 +31,7 @@ export const recipeAPI = {
   // Get recipe statistics
   getRecipeStats: () => api.get('/recipes/stats'),
 
-    // Get user tags
+  // Get user tags
   getUserTags: () => api.get('/recipes/tags/user-tags'),
   
 };

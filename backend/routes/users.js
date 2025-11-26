@@ -1,26 +1,18 @@
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
 const {
   getUserProfile,
   updateUserProfile,
   getUserPublicRecipes,
   uploadAvatar
 } = require('../controllers/userController');
+const { getUserAvatar } = require('../controllers/imageController');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Configure multer for avatar uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/avatars/');
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configure multer for memory storage
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
@@ -39,9 +31,11 @@ const upload = multer({
 // Public routes
 router.get('/:userId/profile', getUserProfile);
 router.get('/:userId/recipes', getUserPublicRecipes);
+router.get('/:userId/avatar', getUserAvatar); // Make this public
 
 // Protected routes
-router.put('/profile', protect, updateUserProfile);
-router.post('/avatar', protect, upload.single('avatar'), uploadAvatar);
+router.use(protect);
+router.put('/profile', updateUserProfile);
+router.post('/avatar', upload.single('avatar'), uploadAvatar);
 
 module.exports = router;

@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { createRecipe, updateRecipe, clearCurrentRecipe } from '../../store/slices/recipeSlice';
 import { useNavigate } from 'react-router-dom';
 import ImageUpload from './ImageUpload';
+import { getImageUrl } from '../../services/api';
+import {uploadAPI} from '../../services/uploadAPI';
 
 const RecipeForm = ({ recipe = null }) => {
   const dispatch = useDispatch();
@@ -21,16 +23,28 @@ const RecipeForm = ({ recipe = null }) => {
     category: 'Other',
     tags: [],
     isPublic: false,
-    image : ''
   });
 
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
   const [newTag, setNewTag] = useState('');
 
   const units = ['g', 'kg', 'ml', 'l', 'cup', 'tbsp', 'tsp', 'piece', 'pinch', 'to taste'];
   const difficulties = ['Easy', 'Medium', 'Hard'];
   const categories = ['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Beverage', 'Other'];
-  const handleImageUpload = (imageUrl)=>{
-    setFormData(prev => ({...prev,image:imageUrl}));
+
+  const handleImageUpload = (imageFile) => {
+    if (imageFile && typeof imageFile === 'object') {
+      // It's a File object for new recipe
+      setSelectedImage(imageFile);
+    } else if (imageFile && recipe) {
+      // Image was uploaded for existing recipe
+      setImagePreview(getImageUrl.recipe(recipe._id) + '?t=' + Date.now());
+    } else if (imageFile === null) {
+      // Image was removed
+      setSelectedImage(null);
+      setImagePreview('');
+    }
   };
 
   useEffect(() => {
@@ -48,6 +62,11 @@ const RecipeForm = ({ recipe = null }) => {
         tags: recipe.tags || [],
         isPublic: recipe.isPublic || false
       });
+      
+      // Set existing image preview if available
+      if (recipe._id) {
+        setImagePreview(getImageUrl.recipe(recipe._id));
+      }
     }
   }, [recipe]);
 
@@ -123,46 +142,94 @@ const RecipeForm = ({ recipe = null }) => {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Convert string numbers to actual numbers
-    const submitData = {
-      ...formData,
-      prepTime: parseInt(formData.prepTime),
-      cookTime: parseInt(formData.cookTime),
-      servings: parseInt(formData.servings),
-      ingredients: formData.ingredients.map(ing => ({
-        ...ing,
-        quantity: parseFloat(ing.quantity) || 0
-      }))
-    };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  // Validate required fields
+  if (!formData.title.trim()) {
+    alert('Recipe title is required');
+    return;
+  }
+  if (!formData.prepTime || formData.prepTime < 0) {
+    alert('Prep time is required and must be a positive number');
+    return;
+  }
+  if (!formData.cookTime || formData.cookTime < 0) {
+    alert('Cook time is required and must be a positive number');
+    return;
+  }
+  if (!formData.servings || formData.servings < 1) {
+    alert('Servings is required and must be at least 1');
+    return;
+  }
+  if (formData.ingredients.some(ing => !ing.name.trim() || ing.quantity === '')) {
+    alert('All ingredients must have a name and quantity');
+    return;
+  }
+  if (formData.instructions.some(instruction => !instruction.trim())) {
+    alert('All instruction steps must be filled');
+    return;
+  }
 
-    try {
-      if (recipe) {
-        await dispatch(updateRecipe({ id: recipe._id, recipeData: submitData })).unwrap();
-      } else {
-        await dispatch(createRecipe(submitData)).unwrap();
-      }
-      
-      dispatch(clearCurrentRecipe());
-      navigate('/dashboard');
-    } catch (error) {
-      console.error('Failed to save recipe:', error);
-    }
+  // Prepare recipe data as JSON
+  const recipeData = {
+    title: formData.title.trim(),
+    description: formData.description.trim(),
+    ingredients: formData.ingredients.map(ing => ({
+      name: ing.name.trim(),
+      quantity: parseFloat(ing.quantity) || 0,
+      unit: ing.unit
+    })),
+    instructions: formData.instructions.map(inst => inst.trim()),
+    prepTime: parseInt(formData.prepTime) || 0,
+    cookTime: parseInt(formData.cookTime) || 0,
+    servings: parseInt(formData.servings) || 1,
+    difficulty: formData.difficulty,
+    category: formData.category,
+    tags: formData.tags,
+    isPublic: formData.isPublic
   };
+
+  try {
+    if (recipe) {
+      await dispatch(updateRecipe({ 
+        id: recipe._id, 
+        recipeData 
+      })).unwrap();
+      
+      // If there's a new image, upload it separately
+      if (selectedImage) {
+        const imageFormData = new FormData();
+        imageFormData.append('image', selectedImage);
+        imageFormData.append('recipeId', recipe._id);
+        await uploadAPI.uploadImage(imageFormData, recipe._id);
+      }
+    } else {
+      const newRecipe = await dispatch(createRecipe(recipeData)).unwrap();
+      
+      // If there's an image, upload it separately after creating the recipe
+      if (selectedImage) {
+        const imageFormData = new FormData();
+        imageFormData.append('image', selectedImage);
+        imageFormData.append('recipeId', newRecipe._id);
+        await uploadAPI.uploadImage(imageFormData, newRecipe._id);
+      }
+    }
+    
+    dispatch(clearCurrentRecipe());
+    navigate('/dashboard');
+  } catch (error) {
+    console.error('Failed to save recipe:', error);
+    alert('Failed to save recipe. Please check all required fields and try again.');
+  }
+};
 
   return (
     <div className="max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">
         {recipe ? 'Edit Recipe' : 'Create New Recipe'}
       </h1>
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <ImageUpload 
-                onImageUpload={handleImageUpload}
-                currentImage={formData.image}
-            />
-        </div>
+      
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
           {error}
@@ -170,6 +237,15 @@ const RecipeForm = ({ recipe = null }) => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Image Upload Section */}
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <ImageUpload 
+            onImageUpload={handleImageUpload}
+            currentImage={imagePreview}
+            recipeId={recipe?._id}
+          />
+        </div>
+
         {/* Basic Information */}
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
@@ -186,6 +262,7 @@ const RecipeForm = ({ recipe = null }) => {
                 onChange={handleInputChange}
                 className="input-field"
                 required
+                placeholder="Enter recipe title"
               />
             </div>
 
@@ -239,6 +316,7 @@ const RecipeForm = ({ recipe = null }) => {
                 className="input-field"
                 min="0"
                 required
+                placeholder="0"
               />
             </div>
 
@@ -254,6 +332,7 @@ const RecipeForm = ({ recipe = null }) => {
                 className="input-field"
                 min="0"
                 required
+                placeholder="0"
               />
             </div>
 
@@ -269,6 +348,7 @@ const RecipeForm = ({ recipe = null }) => {
                 className="input-field"
                 min="1"
                 required
+                placeholder="1"
               />
             </div>
 
@@ -310,7 +390,7 @@ const RecipeForm = ({ recipe = null }) => {
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
                   <input
                     type="text"
-                    placeholder="Ingredient name"
+                    placeholder="Ingredient name *"
                     value={ingredient.name}
                     onChange={(e) => handleIngredientChange(index, 'name', e.target.value)}
                     className="input-field"
@@ -318,7 +398,7 @@ const RecipeForm = ({ recipe = null }) => {
                   />
                   <input
                     type="number"
-                    placeholder="Quantity"
+                    placeholder="Quantity *"
                     value={ingredient.quantity}
                     onChange={(e) => handleIngredientChange(index, 'quantity', e.target.value)}
                     className="input-field"
@@ -371,7 +451,7 @@ const RecipeForm = ({ recipe = null }) => {
                 </span>
                 <div className="flex-1">
                   <textarea
-                    placeholder={`Step ${index + 1}...`}
+                    placeholder={`Step ${index + 1}... *`}
                     value={instruction}
                     onChange={(e) => handleInstructionChange(index, e.target.value)}
                     rows="2"
@@ -436,33 +516,27 @@ const RecipeForm = ({ recipe = null }) => {
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <h2 className="text-lg font-semibold mb-4">Sharing & Privacy</h2>
-              
-              <div className="space-y-4">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="isPublic"
-                    checked={formData.isPublic}
-                    onChange={handleInputChange}
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  />
-                  <label className="ml-2 block text-sm text-gray-700">
-                    Make this recipe public
-                  </label>
-                </div>
-                
-                {formData.isPublic && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-sm text-blue-800">
-                      ✅ This recipe will be visible to everyone on the Explore page. 
-                      Other users will be able to view and like your creation!
-                    </p>
-                  </div>
-                )}
-              </div>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                name="isPublic"
+                checked={formData.isPublic}
+                onChange={handleInputChange}
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <label className="ml-2 block text-sm text-gray-700">
+                Make this recipe public
+              </label>
             </div>
+            
+            {formData.isPublic && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  ✅ This recipe will be visible to everyone on the Explore page. 
+                  Other users will be able to view and like your creation!
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

@@ -8,6 +8,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Add this line
 });
 
 // Add token to requests
@@ -42,6 +43,12 @@ export const authAPI = {
   register: (userData) => api.post('/auth/register', userData),
   login: (credentials) => api.post('/auth/login', credentials),
   getMe: () => api.get('/auth/me'),
+};
+
+// Helper function to get image URLs
+export const getImageUrl = {
+  recipe: (recipeId) => `${API_URL}/recipes/${recipeId}/image`,
+  avatar: (userId) => `${API_URL}/users/${userId}/avatar`,
 };
 
 export default api;

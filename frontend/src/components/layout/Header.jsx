@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../store/slices/authSlice';
+import { getImageUrl } from '../../services/api';
+import { route } from '../../../../backend/server';
 
 const Header = () => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
@@ -9,7 +11,11 @@ const Header = () => {
 
   const handleLogout = () => {
     dispatch(logout());
+    router.navigate('/');
   };
+
+  // Generate avatar URL
+  const avatarUrl = user?._id ? getImageUrl.avatar(user._id) + '?t=' + Date.now() : '';
 
   return (
     <header className="bg-white shadow-sm border-b">
@@ -35,24 +41,29 @@ const Header = () => {
                 </Link>
                 <div className="relative group">
                   <button className="flex items-center space-x-2 text-gray-700 hover:text-primary-600">
-                    {user?.avatar ? (
+                    {user?._id ? (
                       <img 
-                        src={user.avatar} 
+                        src={avatarUrl} 
                         alt={user.username}
                         className="w-8 h-8 rounded-full"
+                        onError={(e) => {
+                          // Hide the image and show fallback if it fails to load
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
                       />
-                    ) : (
-                      <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                        {user?.username?.charAt(0)?.toUpperCase() || 'U'}
-                      </div>
-                    )}
+                    ) : 
+                    <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                      {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                    }
                     <span>{user?.username}</span>
                   </button>
                   
                   {/* Dropdown Menu */}
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                     <Link 
-                      to={`/user/${user?.id}`} 
+                      to={`/user/${user?._id}`} 
                       className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                     >
                       My Profile

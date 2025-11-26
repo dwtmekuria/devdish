@@ -1,23 +1,14 @@
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
 const { protect } = require('../middleware/auth');
+const Recipe = require('../models/Recipe');
 
 const router = express.Router();
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'recipe-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configure multer for memory storage
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
-  // Check if file is an image
   if (file.mimetype.startsWith('image/')) {
     cb(null, true);
   } else {
@@ -33,8 +24,8 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
-// Upload image endpoint
-router.post('/image', protect, upload.single('image'), (req, res) => {
+// Upload recipe image endpoint
+router.post('/image', protect, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -43,15 +34,47 @@ router.post('/image', protect, upload.single('image'), (req, res) => {
       });
     }
 
-    // In production, you'd upload to cloud storage like AWS S3
-    // For development, we'll serve files from the uploads directory
-    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    // If recipeId is provided, update the recipe's image
+    if (req.body.recipeId) {
+      const recipe = await Recipe.findOne({
+        _id: req.body.recipeId,
+        userId: req.user.id
+      });
 
+      if (!recipe) {
+        return res.status(404).json({
+          success: false,
+          message: 'Recipe not found'
+        });
+      }
+
+      recipe.image = {
+        data: req.file.buffer,
+        contentType: req.file.mimetype,
+        filename: req.file.originalname
+      };
+
+      await recipe.save();
+
+      return res.json({
+        success: true,
+        message: 'Recipe image uploaded successfully',
+        data: {
+          recipeId: recipe._id
+        }
+      });
+    }
+
+    // If no recipeId, just return the image data for later use
     res.json({
       success: true,
       message: 'Image uploaded successfully',
       data: {
-        imageUrl: imageUrl
+        image: {
+          data: req.file.buffer.toString('base64'), // Send as base64 for frontend
+          contentType: req.file.mimetype,
+          filename: req.file.originalname
+        }
       }
     });
 

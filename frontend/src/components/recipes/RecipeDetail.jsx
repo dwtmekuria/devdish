@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchRecipe, deleteRecipe } from '../../store/slices/recipeSlice';
+import { getImageUrl } from '../../services/api';
 
 const RecipeDetail = () => {
   const { id } = useParams();
@@ -23,6 +24,9 @@ const RecipeDetail = () => {
   const handleEdit = () => {
     navigate(`/recipes/edit/${id}`);
   };
+
+  // Generate image URL
+  const imageUrl = recipe?._id ? getImageUrl.recipe(recipe._id) + '?t=' + Date.now() : '';
 
   if (loading) {
     return (
@@ -91,18 +95,22 @@ const RecipeDetail = () => {
       {/* Recipe Image */}
       <div className="mb-8">
         <div className="h-96 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
-          {recipe.image ? (
+          {recipe._id ? (
             <img 
-              src={recipe.image} 
+              src={imageUrl} 
               alt={recipe.title}
               className="h-full w-full object-cover"
+              onError={(e) => {
+                // Hide the image and show fallback if it fails to load
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
             />
-          ) : (
-            <div className="text-gray-400 text-center">
-              <div className="text-6xl mb-4">🍳</div>
-              <p className="text-lg">No Image Available</p>
-            </div>
-          )}
+          ) : null}
+          <div className="text-gray-400 text-center" style={{ display: recipe._id ? 'none' : 'flex' }}>
+            <div className="text-6xl mb-4">🍳</div>
+            <p className="text-lg">No Image Available</p>
+          </div>
         </div>
       </div>
 

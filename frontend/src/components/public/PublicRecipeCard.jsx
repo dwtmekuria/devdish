@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-
+import { getImageUrl } from '../../services/api';
+import { useSelector } from 'react-redux';
 const PublicRecipeCard = ({ recipe, onLike, isLiked = false, showLikeButton = true }) => {
   const totalTime = recipe.prepTime + recipe.cookTime;
-  
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
+
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
       case 'Easy': return 'bg-green-100 text-green-800';
@@ -12,6 +14,12 @@ const PublicRecipeCard = ({ recipe, onLike, isLiked = false, showLikeButton = tr
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  // Generate image URL for recipe
+  const recipeImageUrl = recipe._id ? getImageUrl.recipe(recipe._id) + '?t=' + Date.now() : '';
+  
+  // Generate avatar URL for user
+  const userAvatarUrl = recipe.userId?._id ? getImageUrl.avatar(recipe.userId._id) + '?t=' + Date.now() : '';
 
   const handleLikeClick = (e) => {
     e.preventDefault();
@@ -24,19 +32,23 @@ const PublicRecipeCard = ({ recipe, onLike, isLiked = false, showLikeButton = tr
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
       {/* Recipe Image */}
-      <div className="h-48 bg-gray-200 flex items-center justify-center relative">
-        {recipe.image ? (
+      <div className="h-48 bg-gray-200 flex items-center justify-center relative overflow-hidden">
+        {recipe._id ? (
           <img 
-            src={recipe.image} 
+            src={recipeImageUrl} 
             alt={recipe.title}
             className="h-full w-full object-cover"
+            onError={(e) => {
+              // Hide the image and show fallback if it fails to load
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
           />
-        ) : (
-          <div className="text-gray-400 text-center">
-            <div className="text-4xl mb-2">🍳</div>
-            <p className="text-sm">No Image</p>
-          </div>
-        )}
+        ) : null}
+        <div className="text-gray-400 text-center" style={{ display: recipe._id ? 'none' : 'flex' }}>
+          <div className="text-4xl mb-2">🍳</div>
+          <p className="text-sm">No Image</p>
+        </div>
         
         {/* Like Button */}
         {showLikeButton && (
@@ -101,19 +113,24 @@ const PublicRecipeCard = ({ recipe, onLike, isLiked = false, showLikeButton = tr
             to={`/user/${recipe.userId?._id || recipe.userId}`}
             className="flex items-center space-x-2 hover:underline"
           >
-            {recipe.userId?.avatar ? (
+            {recipe.userId?._id ? (
               <img 
-                src={recipe.userId.avatar} 
+                src={userAvatarUrl} 
                 alt={recipe.userId.username}
                 className="w-6 h-6 rounded-full"
+                onError={(e) => {
+                  // Hide the image and show fallback if it fails to load
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
               />
-            ) : (
-              <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs">
-                {recipe.userId?.username?.charAt(0)?.toUpperCase() || 'U'}
-              </div>
-            )}
+            ) : (user._id == recipe.userId._id ? (
+            <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center text-xs">
+              {recipe.userId?.username?.charAt(0)?.toUpperCase()}
+            </div>):null)
+            }
             <span className="text-sm text-gray-600">
-              {recipe.userId?.username || 'Unknown'}
+              {recipe.userId?.username }
             </span>
           </Link>
           
