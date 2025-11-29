@@ -17,9 +17,6 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production",
-    "CORS_ORIGINS": "https://devdish.vercel.app,http://localhost:5173,https://devdish-git-work-pc-dawit-mekurias-projects.vercel.app/",
-    "FRONTEND_URL": "https://devdish.vercel.app,https://devdish-git-work-pc-dawit-mekurias-projects.vercel.app/"
-
+    "NODE_ENV": "production"
   }
 }
