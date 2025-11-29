@@ -17,6 +17,9 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "CORS_ORIGINS": "https://devdish.vercel.app,http://localhost:5173",
+    "FRONTEND_URL": "https://devdish.vercel.app"
+
   }
 }
