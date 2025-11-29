@@ -40,18 +40,20 @@ const allowedOrigins = [
   'https://devdish.vercel.app',
   process.env.FRONTEND_URL,
 ];
-app.use(cors({
-origin: function (origin, callback) {
+app.use(cors(
 
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.warn(`CORS blocked request from origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'), false);
-    }
-  },
-  credentials: true
-}));
+// {origin: function (origin, callback) {
+
+//     if (!origin || allowedOrigins.includes(origin)) {
+//       callback(null, true);
+//     } else {
+//       console.warn(`CORS blocked request from origin: ${origin}`);
+//       callback(new Error('Not allowed by CORS'), false);
+//     }
+//   },
+//   credentials: true
+// }
+));
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
