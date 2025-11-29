@@ -34,10 +34,21 @@ const app = express();
 // }
 
 // CORS configuration
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://devdish.vercel.app',
+  process.env.FRONTEND_URL,
+];
 app.use(cors({
-  origin: process.env.FRONTEND_URL
-  || 'http://localhost:5173'
-  ||'https://devdish.vercel.app',
+origin: function (origin, callback) {
+
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'), false);
+    }
+  },
   credentials: true
 }));
 
