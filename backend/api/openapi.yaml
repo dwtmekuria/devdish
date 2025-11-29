@@ -27,6 +27,8 @@ tags:
     description: User profile management
   - name: Upload
     description: File upload operations
+  - name: Images
+    description: Image serving endpoints
 
 paths:
   /auth/register:
@@ -71,13 +73,20 @@ paths:
                         type: object
                         properties:
                           user:
-                            $ref: '#/components/schemas/User'
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              username:
+                                type: string
+                              email:
+                                type: string
+                              avatar:
+                                type: string
                           token:
                             type: string
                             description: JWT token
         '400':
-          $ref: '#/components/responses/ValidationError'
-        '409':
           description: User already exists
           content:
             application/json:
@@ -125,7 +134,16 @@ paths:
                         type: object
                         properties:
                           user:
-                            $ref: '#/components/schemas/User'
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              username:
+                                type: string
+                              email:
+                                type: string
+                              avatar:
+                                type: string
                           token:
                             type: string
         '401':
@@ -404,6 +422,35 @@ paths:
           $ref: '#/components/responses/NotFoundError'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /recipes/{id}/image:
+    get:
+      tags:
+        - Images
+      summary: Get recipe image
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Recipe ID
+      responses:
+        '200':
+          description: Recipe image retrieved successfully
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Image not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -743,6 +790,35 @@ paths:
         '500':
           $ref: '#/components/responses/ServerError'
 
+  /users/{userId}/avatar:
+    get:
+      tags:
+        - Images
+      summary: Get user avatar
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+          description: User ID
+      responses:
+        '200':
+          description: User avatar retrieved successfully
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Avatar not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
   /users/profile:
     put:
       tags:
@@ -772,7 +848,14 @@ paths:
                           user:
                             $ref: '#/components/schemas/User'
         '400':
-          $ref: '#/components/responses/ValidationError'
+          description: Username already taken
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Username is already taken
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '500':
@@ -795,7 +878,7 @@ paths:
                 avatar:
                   type: string
                   format: binary
-                  description: Avatar image file
+                  description: Avatar image file (max 2MB)
       responses:
         '200':
           description: Avatar uploaded successfully
@@ -839,7 +922,10 @@ paths:
                 image:
                   type: string
                   format: binary
-                  description: Recipe image file
+                  description: Recipe image file (max 5MB)
+                recipeId:
+                  type: string
+                  description: Optional recipe ID to associate the image with
       responses:
         '200':
           description: Image uploaded successfully
@@ -853,7 +939,17 @@ paths:
                       data:
                         type: object
                         properties:
-                          imageUrl:
+                          image:
+                            type: object
+                            properties:
+                              data:
+                                type: string
+                                format: base64
+                              contentType:
+                                type: string
+                              filename:
+                                type: string
+                          recipeId:
                             type: string
         '400':
           description: No file uploaded or invalid file
@@ -863,6 +959,12 @@ paths:
                 $ref: '#/components/schemas/Error'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Recipe not found (when recipeId is provided)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -889,8 +991,12 @@ components:
           format: email
           description: User email
         avatar:
-          type: string
-          description: User avatar URL
+          type: object
+          properties:
+            contentType:
+              type: string
+            filename:
+              type: string
         bio:
           type: string
           description: User bio
@@ -1004,8 +1110,15 @@ components:
             type: string
             description: Recipe tags
         image:
-          type: string
-          description: Recipe image URL
+          type: object
+          properties:
+            data:
+              type: string
+              format: byte
+            contentType:
+              type: string
+            filename:
+              type: string
         isPublic:
           type: boolean
           description: Whether the recipe is publicly visible
@@ -1092,7 +1205,15 @@ components:
           items:
             type: string
         image:
-          type: string
+          type: object
+          properties:
+            data:
+              type: string
+              format: byte
+            contentType:
+              type: string
+            filename:
+              type: string
         isPublic:
           type: boolean
           default: false

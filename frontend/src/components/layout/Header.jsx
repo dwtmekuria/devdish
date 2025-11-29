@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../store/slices/authSlice';
 import { getImageUrl } from '../../services/api';
-import { route } from '../../../../backend/server';
 
 const Header = () => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);

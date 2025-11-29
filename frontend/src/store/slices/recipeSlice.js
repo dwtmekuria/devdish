@@ -72,6 +72,20 @@ export const deleteRecipe = createAsyncThunk(
   }
 );
 
+export const fetchUserTags = createAsyncThunk(
+  'recipes/fetchUserTags',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await recipeAPI.getUserTags();
+      return response.data.data.tags;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch tags'
+      );
+    }
+  }
+);
+
 // Recipe slice
 const recipeSlice = createSlice({
   name: 'recipes',
@@ -176,19 +190,7 @@ const recipeSlice = createSlice({
   }
 });
 
-export const fetchUserTags = createAsyncThunk(
-  'recipes/fetchUserTags',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await recipeAPI.getUserTags();
-      return response.data.data.tags;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to fetch tags'
-      );
-    }
-  }
-);
+
 
 export const { clearCurrentRecipe, clearError, setFilters, clearFilters } = recipeSlice.actions;
 export default recipeSlice.reducer;
