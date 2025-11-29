@@ -4,7 +4,7 @@ const path = require('path');
 require('dotenv').config();
 
 const connectDB = require('./config/database');
-const { swaggerDocument, swaggerUi } = require('./config/swagger');
+const { swaggerDocument, swaggerUi } = require('./config/swagger'); // Updated import
 const authRoutes = require('./routes/auth');
 const recipeRoutes = require('./routes/recipes');
 const publicRoutes = require('./routes/public');
@@ -17,47 +17,47 @@ connectDB();
 
 const app = express();
 
-// Enhanced CORS configuration
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'https://devdish.vercel.app',
-      process.env.FRONTEND_URL
-    ].filter(Boolean);
+// Security middleware for production
+// if (process.env.NODE_ENV === 'production') {
+//   const helmet = require('helmet');
+//   const compression = require('compression');
+//   const rateLimit = require('express-rate-limit');
+  
+//   app.use(helmet());
+//   app.use(compression());
 
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked for origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-};
+//   const limiter = rateLimit({
+//     windowMs: 15 * 60 * 1000,
+//     max: 100
+//   });
+//   app.use('/api/', limiter);
+// }
 
-app.use(cors(corsOptions));
-
-// Handle preflight requests
-app.options('*', cors(corsOptions));
+// CORS configuration
+app.use(cors({
+  origin: process.env.FRONTEND_URL
+  || 'http://localhost:5173'
+  ||'https://devdish.vercel.app',
+  credentials: true
+}));
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Swagger Documentation
+// // Serve static files
+// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// // Serve avatar uploads
+// app.use('/uploads/avatars', express.static(path.join(__dirname, 'uploads/avatars')));
+
+//Swagger Documentation
+// For production: Use custom HTML with CDN
 if (process.env.NODE_ENV === 'production') {
   app.get('/api-docs', (req, res) => {
     res.send(createSwaggerHTML(swaggerDocument));
   });
 } else {
+  // For development: Use swagger-ui-express normally
   const swaggerUi = require('swagger-ui-express');
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
     customSiteTitle: "DevDish API Documentation",
@@ -94,14 +94,6 @@ app.use(/.*/, (req, res) => {
 app.use((error, req, res, next) => {
   console.error('Error:', error);
   
-  // Handle CORS errors
-  if (error.message === 'Not allowed by CORS') {
-    return res.status(403).json({
-      success: false,
-      message: 'CORS policy: Origin not allowed'
-    });
-  }
-  
   if (error.name === 'ValidationError') {
     return res.status(400).json({
       success: false,
@@ -130,7 +122,6 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 DevDish server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
   console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
-  console.log(`🌐 CORS allowed origins:`, corsOptions.origin);
 });
 
 module.exports = app;

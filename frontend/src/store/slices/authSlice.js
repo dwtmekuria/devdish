@@ -27,15 +27,20 @@ export const loginUser = createAsyncThunk(
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await authAPI.login(credentials);
-      const { token, user } = response.data.data;
-      
+      if (!response.data.success) {
+         return rejectWithValue(response.data.message || 'Login failed');
+      }
+
+      const { token, user } = response.data.data; 
       localStorage.setItem(STORAGE_KEYS.TOKEN, token);
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-      
+
       return { user, token };
     } catch (error) {
+      localStorage.removeItem(STORAGE_KEYS.TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER);
       return rejectWithValue(
-        error.response?.data?.message || 'Login failed'
+        error.response?.data?.message || 'Login failed due to server error'
       );
     }
   }
@@ -118,6 +123,7 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
+
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;

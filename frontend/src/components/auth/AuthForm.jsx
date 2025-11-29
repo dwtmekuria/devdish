@@ -23,15 +23,14 @@ const AuthForm = ({ isLogin, onSubmit, loading }) => {
     });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (isLogin) {
-      onSubmit({ email: formData.email, password: formData.password });
-    } else {
-      onSubmit(formData);
-    }
-  };
+const handleSubmit = (e) => {
+  e.preventDefault();  
+  if (isLogin) {
+    onSubmit({ email: formData.email, password: formData.password });
+  } else {
+    onSubmit(formData);
+  }
+};
 
   return (
     <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">

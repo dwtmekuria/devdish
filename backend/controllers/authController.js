@@ -66,18 +66,18 @@ const login = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({
+      return res.status(200).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Invalid email'
       });
     }
 
  
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      return res.status(401).json({
+      return res.status(200).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Invalid password'
       });
     }
 

@@ -7,7 +7,7 @@ export default defineConfig({
   build: {
     target: 'esnext',
     rollupOptions: {
-      external: [], // Ensure no modules are being externalized incorrectly
+      external: [], 
     },
   },
   esbuild: {
